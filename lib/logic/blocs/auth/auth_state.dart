@@ -5,41 +5,45 @@ import 'auth_event.dart';
 part 'auth_state.freezed.dart';
 
 @freezed
-class AuthState with _$AuthState {
+class AuthState with _$AuthState { 
   // App startup
-  const factory AuthState.initial() = Initial;
-  const factory AuthState.welcome() = Welcome;
+  const factory AuthState.initial() = InitialState;
+  const factory AuthState.welcome() = WelcomeState;
   
   // Phone and OTP flow
   const factory AuthState.phoneInput({
     required AuthContext context,
-  }) = PhoneInput;
+  }) = PhoneInputState;
   
-  const factory AuthState.otpLoading() = OtpLoading;
-  const factory AuthState.otpInput() = OtpInput;
-  const factory AuthState.otpVerifying() = OtpVerifying;
+  const factory AuthState.otpLoading() = OtpLoadingState;
+  const factory AuthState.otpInput({
+    required AuthContext context,
+  }) = OtpInputState;
+  const factory AuthState.otpVerifying({
+    required AuthContext context,
+  }) = OtpVerifyingState;
   
   // Profile creation
-  const factory AuthState.profileCreation() = ProfileCreation;
-  const factory AuthState.profileCreating() = ProfileCreating;
+  const factory AuthState.profileCreation() = ProfileCreationState;
+  const factory AuthState.profileCreating() = ProfileCreatingState;
   
   // KYC upload
-  const factory AuthState.kycUpload() = KycUpload;
-  const factory AuthState.kycProcessing() = KycProcessing;
+  const factory AuthState.kycUpload() = KycUploadState;
+  const factory AuthState.kycProcessing() = KycProcessingState;
   
   // PIN input
-  const factory AuthState.pinInput() = PinInput;
-  const factory AuthState.pinVerifying() = PinVerifying;
+  const factory AuthState.pinInput() = PinInputState;
+  const factory AuthState.pinVerifying() = PinVerifyingState;
   
   // Success states
   const factory AuthState.authenticated({
     required AuthResponse response,
-  }) = Authenticated;
+  }) = AuthenticatedState;
   
-  const factory AuthState.kycRequired() = KycRequired;
+  const factory AuthState.kycRequired() = KycRequiredState;
   
   // Error state
   const factory AuthState.error({
     required String message,
-  }) = Error;
+  }) = ErrorState;
 } 

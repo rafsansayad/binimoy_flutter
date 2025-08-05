@@ -7,107 +7,102 @@ import 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _repository;
   
-  // Store current context and phone for flow
-  AuthContext? _currentContext;
+  // Store phone, user, tokens in memory
   String? _currentPhone;
+  AuthResponse? _currentAuthResponse; 
   
   AuthBloc({required AuthRepository repository}) 
     : _repository = repository,
       super(const AuthState.initial()) {
     
     // App startup
-    on<AppStarted>(_onAppStarted);
+    on<AppStartedEvent>(_onAppStarted);
     
     // Phone and OTP flow
-    on<SubmitPhone>(_onSubmitPhone);
-    on<SubmitOtp>(_onSubmitOtp);
+    on<SubmitPhoneEvent>(_onSubmitPhone);
+    on<SubmitOtpEvent>(_onSubmitOtp);
     
     // Profile creation
-    on<CreateProfile>(_onCreateProfile);
+    on<CreateProfileEvent>(_onCreateProfile);
     
     // KYC upload
-    on<UploadKyc>(_onUploadKyc);
+    on<UploadKycEvent>(_onUploadKyc);
     
     // PIN input
-    on<SubmitPin>(_onSubmitPin);
+    on<SubmitPinEvent>(_onSubmitPin);
     
     // Session management
-    on<Logout>(_onLogout);
-    on<ClearError>(_onClearError);
+    on<LogoutEvent>(_onLogout);
+    on<ClearErrorEvent>(_onClearError);
   }
   
   // App startup - check session
-  Future<void> _onAppStarted(AppStarted event, Emitter<AuthState> emit) async {
-    emit(const AuthState.initial());
+  Future<void> _onAppStarted(AppStartedEvent event, Emitter<AuthState> emit) async {
+    emit(const InitialState());
     
     // Check for stored session
     final tokens = await _repository.getStoredTokens();
     final user = await _repository.getStoredUser();
     
     if (tokens != null && user != null) {
-      // User has valid session - check if KYC is complete
-      if (user.isKycVerified) {
-        emit(AuthState.authenticated(response: AuthResponse(
-          user: user,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        )));
-      } else {
-        emit(const AuthState.kycRequired());
-      }
+      // User has valid session - go to main app
+      emit(AuthenticatedState(response: AuthResponse(
+        user: user,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      )));
     } else {
       // No session - show welcome
-      emit(const AuthState.welcome());
+      emit(const WelcomeState());
     }
   }
   
   // Submit phone number and request OTP
-  Future<void> _onSubmitPhone(SubmitPhone event, Emitter<AuthState> emit) async {
-    _currentContext = event.context;
+  Future<void> _onSubmitPhone(SubmitPhoneEvent event, Emitter<AuthState> emit) async {
     _currentPhone = event.phone;
     
-    emit(const AuthState.otpLoading());
+    emit(const OtpLoadingState());
     
     final result = await _repository.getOtp(event.phone);
     
     result.when(
-      success: (data) => emit(const AuthState.otpInput()),
-      error: (error) => emit(AuthState.error(message: error)),
+      success: (data) => emit(OtpInputState(context: event.context)),
+      error: (error) => emit(ErrorState(message: error)),
     );
   }
   
   // Submit OTP and determine next step
-  Future<void> _onSubmitOtp(SubmitOtp event, Emitter<AuthState> emit) async {
+  Future<void> _onSubmitOtp(SubmitOtpEvent event, Emitter<AuthState> emit) async {
     if (_currentPhone == null) {
-      emit(const AuthState.error(message: 'No phone number found'));
+      emit(const ErrorState(message: 'No phone number found'));
       return;
     }
     
-    emit(const AuthState.otpVerifying());
+    emit(OtpVerifyingState(context: event.context));
     
     final result = await _repository.verifyOtp(_currentPhone!, event.otp);
     
     result.when(
       success: (data) {
         // OTP verified - determine next step based on context
-        if (_currentContext == AuthContext.onboarding) {
-          emit(const AuthState.profileCreation());
+        if (event.context == AuthContext.onboarding) {
+          emit(const ProfileCreationState());
         } else {
-          emit(const AuthState.pinInput());
+          emit(const PinInputState());
         }
       },
-      error: (error) => emit(AuthState.error(message: error)),
+      error: (error) => emit(ErrorState(message: error)),
     );
   }
   
   // Create user profile
-  Future<void> _onCreateProfile(CreateProfile event, Emitter<AuthState> emit) async {
+  Future<void> _onCreateProfile(CreateProfileEvent event, Emitter<AuthState> emit) async {
     if (_currentPhone == null) {
-      emit(const AuthState.error(message: 'No phone number found'));
+      emit(const ErrorState(message: 'No phone number found'));
       return;
     }
     
-    emit(const AuthState.profileCreating());
+    emit(const ProfileCreatingState());
     
     final result = await _repository.register(
       firstName: event.firstName,
@@ -121,48 +116,34 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       success: (authResponse) async {
         // Save auth data
         await _repository.saveAuthData(authResponse);
+        _currentAuthResponse = authResponse; // Store in memory
         
-        // Check if KYC is required
-        if (authResponse.user.isKycVerified) {
-          emit(AuthState.authenticated(response: authResponse));
-        } else {
-          emit(const AuthState.kycUpload());
-        }
+        // New users need KYC
+        emit(const KycUploadState());
       },
-      error: (error) => emit(AuthState.error(message: error)),
+      error: (error) => emit(ErrorState(message: error)),
     );
   }
   
   // Upload KYC documents
-  Future<void> _onUploadKyc(UploadKyc event, Emitter<AuthState> emit) async {
-    emit(const AuthState.kycProcessing());
+  Future<void> _onUploadKyc(UploadKycEvent event, Emitter<AuthState> emit) async {
+    emit(const KycProcessingState());
     
     // TODO: Implement KYC upload API
-    // For now, simulate processing
-    await Future.delayed(const Duration(seconds: 2));
-    
-    // Get current user and update KYC status
-    final user = await _repository.getStoredUser();
-    if (user != null) {
-      // TODO: Update user with KYC verification
-      emit(AuthState.authenticated(response: AuthResponse(
-        user: user.copyWith(isKycVerified: true),
-        accessToken: '', // Get from storage
-        refreshToken: '', // Get from storage
-      )));
-    } else {
-      emit(const AuthState.error(message: 'User not found'));
+    // Use stored data directly
+    if (_currentAuthResponse != null) {
+      emit(AuthenticatedState(response: _currentAuthResponse!));
     }
   }
   
   // Submit PIN for login
-  Future<void> _onSubmitPin(SubmitPin event, Emitter<AuthState> emit) async {
+  Future<void> _onSubmitPin(SubmitPinEvent event, Emitter<AuthState> emit) async {
     if (_currentPhone == null) {
-      emit(const AuthState.error(message: 'No phone number found'));
+      emit(const ErrorState(message: 'No phone number found'));
       return;
     }
     
-    emit(const AuthState.pinVerifying());
+    emit(const PinVerifyingState());
     
     final result = await _repository.login(_currentPhone!, event.pin);
     
@@ -170,27 +151,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       success: (authResponse) async {
         // Save auth data
         await _repository.saveAuthData(authResponse);
-        
-        // Check if KYC is required
-        if (authResponse.user.isKycVerified) {
-          emit(AuthState.authenticated(response: authResponse));
-        } else {
-          emit(const AuthState.kycRequired());
-        }
+        _currentAuthResponse = authResponse; // Store in memory
+  
+          emit(AuthenticatedState(response: authResponse));
+
       },
-      error: (error) => emit(AuthState.error(message: error)),
+      error: (error) => emit(ErrorState(message: error)),
     );
   }
   
   // Logout user
-  Future<void> _onLogout(Logout event, Emitter<AuthState> emit) async {
+  Future<void> _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
     // Get stored tokens for API logout
     final tokens = await _repository.getStoredTokens();
     if (tokens != null) {
       try {
         await _repository.logout(tokens.refreshToken, tokens.accessToken);
       } catch (e) {
-        // Ignore API logout errors
+        // Log error for debugging, but don't fail logout
+        print('Logout API failed: $e');
       }
     }
     
@@ -198,14 +177,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     await _repository.clearAllStorage();
     
     // Reset flow data
-    _currentContext = null;
     _currentPhone = null;
+    _currentAuthResponse = null; // Clear memory cache
     
-    emit(const AuthState.welcome());
+    emit(const WelcomeState());
   }
   
   // Clear error and go back to welcome
-  Future<void> _onClearError(ClearError event, Emitter<AuthState> emit) async {
-    emit(const AuthState.welcome());
+  Future<void> _onClearError(ClearErrorEvent event, Emitter<AuthState> emit) async {
+    emit(const WelcomeState());
   }
 }

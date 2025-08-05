@@ -7,17 +7,18 @@ enum AuthContext { onboarding, login }
 @freezed
 class AuthEvent with _$AuthEvent {
   // App startup
-  const factory AuthEvent.appStarted() = AppStarted;
+  const factory AuthEvent.appStarted() = AppStartedEvent;
   
   // Phone and OTP flow
   const factory AuthEvent.submitPhone({
     required String phone,
     required AuthContext context,
-  }) = SubmitPhone;
+  }) = SubmitPhoneEvent;
   
   const factory AuthEvent.submitOtp({
     required String otp,
-  }) = SubmitOtp;
+    required AuthContext context,
+  }) = SubmitOtpEvent;
   
   // Profile creation
   const factory AuthEvent.createProfile({
@@ -25,22 +26,22 @@ class AuthEvent with _$AuthEvent {
     required String lastName,
     required String userName,
     required String pin,
-  }) = CreateProfile;
+  }) = CreateProfileEvent;
   
   // KYC upload
   const factory AuthEvent.uploadKyc({
     required String nidImage,
     required String selfieImage,
-  }) = UploadKyc;
+  }) = UploadKycEvent;
   
   // PIN input
   const factory AuthEvent.submitPin({
     required String pin,
-  }) = SubmitPin;
+  }) = SubmitPinEvent;
   
   // Session management
-  const factory AuthEvent.logout() = Logout;
+  const factory AuthEvent.logout() = LogoutEvent;
   
   // Error handling
-  const factory AuthEvent.clearError() = ClearError;
+  const factory AuthEvent.clearError() = ClearErrorEvent;
 } 
