@@ -196,7 +196,7 @@ class ThemeConfig {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: const Color(0xFFE5E5EA).withOpacity(0.5),
+          color: const Color(0xFFE5E5EA).withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -445,7 +445,7 @@ class ThemeConfig {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: const Color(0xFF48484A).withOpacity(0.5),
+          color: const Color(0xFF48484A).withValues(alpha: 0.5),
           width: 1,
         ),
       ),

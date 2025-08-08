@@ -7,7 +7,7 @@ part 'auth_response.g.dart';
 //used as a wrapper for registraion and login
 
 @freezed
-class AuthResponse with _$AuthResponse {
+abstract class AuthResponse with _$AuthResponse {
   const factory AuthResponse({
     required User user,
     required String accessToken,

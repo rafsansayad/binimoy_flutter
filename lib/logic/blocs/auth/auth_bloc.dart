@@ -3,13 +3,16 @@ import '../../../data/repositories/auth_repository.dart';
 import '../../../data/models/models.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
-
+ 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _repository;
   
   // Store phone, user, tokens in memory
   String? _currentPhone;
   AuthResponse? _currentAuthResponse; 
+  
+  // Getter to access current phone number
+  String? get currentPhone => _currentPhone;
   
   AuthBloc({required AuthRepository repository}) 
     : _repository = repository,
@@ -113,9 +116,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
     
     result.when(
-      success: (authResponse) async {
+      success: (authResponse)  {
         // Save auth data
-        await _repository.saveAuthData(authResponse);
+         _repository.saveAuthData(authResponse);
         _currentAuthResponse = authResponse; // Store in memory
         
         // New users need KYC
@@ -148,12 +151,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await _repository.login(_currentPhone!, event.pin);
     
     result.when(
-      success: (authResponse) async {
+      success: (authResponse)  {
         // Save auth data
-        await _repository.saveAuthData(authResponse);
+        _repository.saveAuthData(authResponse);
         _currentAuthResponse = authResponse; // Store in memory
   
-          emit(AuthenticatedState(response: authResponse));
+        emit(AuthenticatedState(response: authResponse));
 
       },
       error: (error) => emit(ErrorState(message: error)),

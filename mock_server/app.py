@@ -19,24 +19,12 @@ def register():
     username = data.get('userName')
     pin = data.get('pin')
     phone = data.get('phone')
+
+    #add opt session logic, if phone was verified in the last 5 min,
+    # only then profile creation with the phone allowed
     
     if not all([first_name, last_name, username, pin, phone]):
         return jsonify({"error": "All fields required"}), 400
-    
-    # Check if OTP was verified recently (session-based)
-    latest_verified_otp = None
-    for otp_record in db["otp"]:
-        if otp_record['phone'] == phone and otp_record['verifiedAt']:
-            if latest_verified_otp is None or otp_record['createdAt'] > latest_verified_otp['createdAt']:
-                latest_verified_otp = otp_record
-    
-    if not latest_verified_otp:
-        return jsonify({"error": "OTP verification required"}), 403
-    
-    # Check if verification is still valid (10 minutes)
-    verified_time = datetime.fromisoformat(latest_verified_otp['verifiedAt'])
-    if verified_time < datetime.now() - timedelta(minutes=10):
-        return jsonify({"error": "OTP verification expired"}), 403
     
     if get_user_by_phone(phone):
         return jsonify({"error": "Phone already registered"}), 409
@@ -171,7 +159,7 @@ def get_otp():
     otp_record = {
         "otpId": len(db["otp"]) + 1,
         "phone": phone,
-        "otp": "123456",
+        "otp": "1234",
         "createdAt": datetime.now().isoformat(),
         "expiresAt": (datetime.now() + timedelta(minutes=5)).isoformat(),
         "verifiedAt": None
@@ -185,20 +173,10 @@ def verify_otp():
     data = request.json
     phone = data.get('phone')
     otp = data.get('otp')
-    
-    if not all([phone, otp]):
-        return jsonify({"success": False, "error": "Phone and OTP required"}), 400
-    
-    otp_record = next((o for o in db["otp"] if o["phone"] == phone and o["otp"] == otp), None)
-    if not otp_record:
-        return jsonify({"success": False, "error": "Invalid OTP"}), 400
-    
-    # Check if OTP is expired
-    if datetime.fromisoformat(otp_record['expiresAt']) < datetime.now():
-        return jsonify({"success": False, "error": "OTP expired"}), 400
-    
-    # Mark OTP as verified
-    otp_record['verifiedAt'] = datetime.now().isoformat()
+    print(data)
+
+    if phone != '01740366532' and otp != '1234':
+        return jsonify("error"), 400
     
     return jsonify("OTP verification succesfull")
 
@@ -374,4 +352,4 @@ def change_pin():
     return jsonify("PIN changed successfully")
 
 if __name__ == '__main__':
-    app.run(port=3000, debug=True)
+    app.run(host='0.0.0.0', port=3000, debug=True)

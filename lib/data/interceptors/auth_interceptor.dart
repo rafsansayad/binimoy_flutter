@@ -3,6 +3,7 @@ import '../services/storage_service.dart';
 import '../datasources/auth_data_source.dart';
 import '../../logic/blocs/auth/auth_bloc.dart';
 import '../../logic/blocs/auth/auth_event.dart';
+import '../models/api_response.dart';
 
 /// Auth interceptor/middleware for automatic token management and logging
 /// Handles token injection, refresh, and basic request/response logging
