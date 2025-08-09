@@ -46,6 +46,84 @@ class LoadingButton extends StatelessWidget {
   }
 }
 
+class PrimaryPillButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final bool expand;
+  final double height;
+
+  const PrimaryPillButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.expand = true,
+    this.height = 44,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
+    final TextTheme textTheme = theme.textTheme;
+    final Widget labelWidget = Text(
+      label,
+      style: textTheme.labelLarge?.copyWith(color: colorScheme.onPrimary),
+      overflow: TextOverflow.ellipsis,
+    );
+    final Widget button = ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon ?? Icons.payment_rounded, size: 18),
+      label: labelWidget,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: colorScheme.primary,
+        elevation: 2,
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        minimumSize: Size(0, height),
+      ),
+    );
+    final Widget wrapped = SizedBox(height: height, child: button);
+    return expand ? SizedBox(width: double.infinity, child: wrapped) : wrapped;
+  }
+}
+
+class IconActionButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+  final Color? color;
+  final double iconSize;
+
+  const IconActionButton({
+    super.key,
+    required this.icon,
+    this.onPressed,
+    this.tooltip,
+    this.color,
+    this.iconSize = 22,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final Color iconColor = color ?? colorScheme.primary;
+    final Widget btn = Ink(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, size: iconSize, color: iconColor),
+        tooltip: tooltip,
+      ),
+    );
+    return btn;
+  }
+}
+
 class AppPrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;

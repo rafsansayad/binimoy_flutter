@@ -5,6 +5,7 @@ import '../presentation/screens/auth/otp_verification_screen.dart';
 import '../presentation/screens/welcome/welcome_screen.dart';
 import '../presentation/screens/auth/register_screen.dart';
 import '../presentation/screens/auth/kyc_upload_screen.dart';
+import '../presentation/screens/home/home_screen.dart';
 
 class AppRouter {
   static const String welcome = '/';
@@ -47,7 +48,12 @@ class AppRouter {
         builder: (context, state) => const RegisterScreen(),
       ),
       
-
+      // PIN Login Screen
+      GoRoute(
+        path: pinLogin,
+        name: 'pinLogin',
+        builder: (context, state) => const PinLoginScreen(),
+      ),
 
       // KYC Upload Screen
       GoRoute(
@@ -56,13 +62,24 @@ class AppRouter {
         builder: (context, state) => const KycUploadScreen(),
       ),
       
+      // Protected Routes with Shell Route for Bottom Navigation
+      ShellRoute(
+        builder: (context, state, child) => ScaffoldWithBottomNav(child: child),
+        routes: [
+          GoRoute(
+            path: home,
+            name: 'home',
+            builder: (context, state) => const HomeScreen(),
+          ),
+        ],
+      ),
     ],
     
     // Global redirect for authentication
     redirect: (context, state) {
       // TODO: Implement authentication logic
       // Check if user is authenticated for protected routes
-      final isAuthenticated = false; // TODO: Get from AuthBloc
+      final isAuthenticated = true; // TODO: Get from AuthBloc
       final isProtectedRoute = state.matchedLocation.startsWith(home);
       
       if (isProtectedRoute && !isAuthenticated) {
@@ -79,7 +96,7 @@ class AppRouter {
       final textTheme = theme.textTheme;
       
       return Scaffold(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: colorScheme.background,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -95,7 +112,7 @@ class AppRouter {
                 Text(
                   'Page not found',
                   style: textTheme.headlineSmall?.copyWith(
-                    color: colorScheme.onSurface,
+                    color: colorScheme.onBackground,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -118,5 +135,56 @@ class AppRouter {
       );
     },
   );
+}
+
+// Scaffold with Bottom Navigation
+class ScaffoldWithBottomNav extends StatefulWidget {
+  const ScaffoldWithBottomNav({
+    super.key,
+    required this.child,
+  });
+
+  final Widget child;
+
+  @override
+  State<ScaffoldWithBottomNav> createState() => _ScaffoldWithBottomNavState();
+}
+
+class _ScaffoldWithBottomNavState extends State<ScaffoldWithBottomNav> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.background,
+      body: widget.child,
+    );
+  }
+}
+
+// Placeholder screens
+class PinLoginScreen extends StatelessWidget {
+  const PinLoginScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    
+    return Scaffold(
+      backgroundColor: colorScheme.background,
+      appBar: AppBar(
+        title: Text('PIN Login', style: textTheme.titleLarge),
+        backgroundColor: colorScheme.surface,
+      ),
+      body: Center(
+        child: Text(
+          'PIN Login Screen',
+          style: textTheme.headlineMedium?.copyWith(
+            color: colorScheme.onBackground,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
